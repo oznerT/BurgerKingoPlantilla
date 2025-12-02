@@ -25,9 +25,9 @@ export async function POST(req: Request) {
         const preference = new Preference(client)
 
         const backUrls = {
-            success: `${siteUrl}/?result=success`,
-            failure: `${siteUrl}/?result=failure`,
-            pending: `${siteUrl}/?result=pending`,
+            success: `${siteUrl}/?result=success&status=approved`,
+            failure: `${siteUrl}/?result=success&status=rejected`,
+            pending: `${siteUrl}/?result=success&status=pending`,
         }
 
         preferenceData = {

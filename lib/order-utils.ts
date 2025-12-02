@@ -1,7 +1,7 @@
 import { OrderState, OrderMode, OrderValidationResult, ValidationErrorKey } from "@/types/order"
+import { settings } from "@/lib/default-data"
 
 export const STORAGE_KEY = "burger-order-state"
-export const DELIVERY_FEE = 500 // Costo de envío configurable
 
 /**
  * Guarda el estado del pedido en localStorage.
@@ -43,55 +43,10 @@ export function clearOrderState(): void {
  * Calcula el costo de envío según el modo de pedido.
  */
 export function calculateDeliveryFee(mode: OrderMode): number {
-    return mode === "DELIVERY" ? DELIVERY_FEE : 0
+    return mode === "DELIVERY" ? settings.deliveryFee : 0
 }
 
-/**
- * Construye el mensaje de WhatsApp con todos los detalles del pedido.
- */
-export function buildWhatsAppMessage(order: OrderState): string {
-    let message = "Hola! Pago realizado ✅\n"
 
-    if (order.mercadoPago?.paymentId) {
-        message += `ID de pago Mercado Pago: ${order.mercadoPago.paymentId}\n`
-    }
-
-    message += `\nModalidad: ${order.mode === "DELIVERY" ? "DELIVERY" : "RETIRO EN LOCAL"}\n`
-    message += `Nombre: ${order.customerData.name}\n`
-    message += `Teléfono: ${order.customerData.phone}\n`
-
-    message += `\nPedido:\n`
-    order.items.forEach((item) => {
-        const itemTotal = item.price * item.quantity
-        message += `• ${item.quantity}x ${item.name} ($${itemTotal.toLocaleString()})\n`
-        if (item.notes) {
-            message += `  Nota: ${item.notes}\n`
-        }
-    })
-
-    message += `\nSubtotal: $${order.subtotal.toLocaleString()}\n`
-
-    if (order.mode === "DELIVERY") {
-        message += `Envío: $${order.deliveryFee.toLocaleString()}\n`
-    }
-
-    message += `TOTAL: $${order.total.toLocaleString()}\n`
-
-    if (order.mode === "DELIVERY" && order.customerData.address) {
-        message += `\nDirección: ${order.customerData.address}\n`
-        if (order.customerData.addressDetails) {
-            message += `Detalles: ${order.customerData.addressDetails}\n`
-        }
-    }
-
-    if (order.orderNotes) {
-        message += `\nNotas adicionales: ${order.orderNotes}`
-    } else {
-        message += `\nNotas adicionales: Sin notas`
-    }
-
-    return message
-}
 
 /**
  * Valida el estado del pedido y retorna errores específicos por campo.

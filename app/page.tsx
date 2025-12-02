@@ -9,6 +9,8 @@ import { PaymentMethodModal } from "@/components/PaymentMethodModal"
 import { OrderDataModal } from "@/components/OrderDataModal"
 import { SuccessView } from "@/components/SuccessView"
 import { Toaster } from "sonner"
+import { CartItem } from "@/types/order"
+import { buildWhatsAppURL } from "@/lib/whatsapp"
 
 // ========================================
 // CONFIGURATION OBJECT - EDIT THIS TO REUSE THE TEMPLATE
@@ -17,23 +19,8 @@ import { useConfig } from "@/context/config-context"
 import { useOrder } from "@/context/order-context"
 
 // ========================================
-// HELPER FUNCTIONS
-// ========================================
-function buildWhatsAppURL(phone: string, message: string): string {
-  const encodedMessage = encodeURIComponent(message)
-  return `https://wa.me/${phone.replace(/\D/g, "")}?text=${encodedMessage}`
-}
-
-// ========================================
 // COMPONENTS
 // ========================================
-type CartItem = {
-  id: string | number
-  name: string
-  price: number
-  quantity: number
-  image?: string
-}
 
 function Header({
   cartCount,

@@ -2,18 +2,13 @@
 
 import { useEffect, useState } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { CheckCircle2, Phone, Package, MapPin, FileText, Home } from "lucide-react"
+import { CheckCircle2, Phone, Package, MapPin, FileText, Home, Clock, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useOrder } from "@/context/order-context"
 import { useConfig } from "@/context/config-context"
-import { buildWhatsAppMessage } from "@/lib/order-utils"
+import { buildWhatsAppURL, buildWhatsAppMessage } from "@/lib/whatsapp"
 import { toast } from "sonner"
-
-function buildWhatsAppURL(phone: string, message: string): string {
-    const encodedMessage = encodeURIComponent(message)
-    return `https://wa.me/${phone.replace(/\D/g, "")}?text=${encodedMessage}`
-}
 
 export function SuccessView() {
     const searchParams = useSearchParams()
@@ -23,14 +18,14 @@ export function SuccessView() {
     const [isRedirecting, setIsRedirecting] = useState(false)
 
     const paymentId = searchParams.get("payment_id")
-    const paymentStatus = searchParams.get("status")
+    const paymentStatus = searchParams.get("status") as "approved" | "pending" | "rejected" | null
 
     // Actualizar estado con info de Mercado Pago
     useEffect(() => {
         if (paymentId && paymentStatus && orderState) {
             setMercadoPagoInfo({
                 paymentId,
-                status: paymentStatus as any,
+                status: paymentStatus,
             })
         }
     }, [paymentId, paymentStatus, orderState, setMercadoPagoInfo])
@@ -85,22 +80,62 @@ export function SuccessView() {
     }
 
     const isApproved = paymentStatus === "approved"
+    const isPending = paymentStatus === "pending"
+    const isRejected = paymentStatus === "rejected"
+
+    const getStatusConfig = () => {
+        if (isApproved) {
+            return {
+                icon: <CheckCircle2 className="w-12 h-12 text-green-600 dark:text-green-400" />,
+                bg: "bg-green-100 dark:bg-green-900/20",
+                title: "¡Pago Confirmado!",
+                message: "Tu pedido está listo para ser procesado.",
+            }
+        }
+        if (isPending) {
+            return {
+                icon: <Clock className="w-12 h-12 text-yellow-600 dark:text-yellow-400" />,
+                bg: "bg-yellow-100 dark:bg-yellow-900/20",
+                title: "Pago Pendiente",
+                message: "Estamos esperando la confirmación del pago.",
+            }
+        }
+        if (isRejected) {
+            return {
+                icon: <XCircle className="w-12 h-12 text-red-600 dark:text-red-400" />,
+                bg: "bg-red-100 dark:bg-red-900/20",
+                title: "Pago Rechazado",
+                message: "Hubo un problema con tu pago. Por favor intenta nuevamente.",
+            }
+        }
+
+        // Unknown status or other
+        return {
+            icon: <XCircle className="w-12 h-12 text-gray-600 dark:text-gray-400" />,
+            bg: "bg-gray-100 dark:bg-gray-900/20",
+            title: "Estado Desconocido",
+            message: "No pudimos verificar el estado del pago. Por favor contactanos.",
+        }
+    }
+
+    const statusConfig = getStatusConfig()
 
     return (
         <div className="min-h-screen bg-secondary/20 py-8 px-4">
             <div className="max-w-2xl mx-auto space-y-6">
-                {/* Header de éxito */}
+                {/* Header de estado */}
                 <div className="bg-card rounded-lg p-8 text-center shadow-lg border border-border">
-                    <div className="w-20 h-20 mx-auto mb-4 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
-                        <CheckCircle2 className="w-12 h-12 text-green-600 dark:text-green-400" />
+                    <div className={`w-20 h-20 mx-auto mb-4 ${statusConfig.bg} rounded-full flex items-center justify-center`}>
+                        {statusConfig.icon}
                     </div>
-                    <h1 className="text-3xl font-bold text-foreground mb-2">¡Pago Confirmado!</h1>
+                    <h1 className="text-3xl font-bold text-foreground mb-2">{statusConfig.title}</h1>
+                    <p className="text-muted-foreground">{statusConfig.message}</p>
                     {paymentId && (
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-muted-foreground mt-2">
                             ID de pago: <span className="font-mono">{paymentId}</span>
                         </p>
                     )}
-                    <p className="text-muted-foreground mt-2">
+                    <p className="text-muted-foreground mt-1">
                         {new Date().toLocaleString("es-AR", {
                             dateStyle: "long",
                             timeStyle: "short",
@@ -197,14 +232,14 @@ export function SuccessView() {
                 {/* Botones */}
                 <div className="space-y-3">
                     {!isApproved && (
-                        <div className="bg-yellow-100 dark:bg-yellow-900/20 border border-yellow-300 dark:border-yellow-700 rounded-lg p-4 text-center">
-                            <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-200">
-                                {paymentStatus === "pending"
+                        <div className={`border rounded-lg p-4 text-center ${isPending ? 'bg-yellow-100 border-yellow-300 text-yellow-800' : 'bg-red-100 border-red-300 text-red-800'}`}>
+                            <p className="text-sm font-semibold">
+                                {isPending
                                     ? "⏳ Tu pago está pendiente de confirmación"
                                     : "❌ Hubo un problema con el pago"}
                             </p>
-                            <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
-                                El pedido no será enviado hasta que el pago sea aprobado
+                            <p className="text-xs mt-1 opacity-90">
+                                {isPending ? "Te avisaremos cuando se acredite." : "Por favor intenta con otro medio de pago."}
                             </p>
                         </div>
                     )}

@@ -136,3 +136,7 @@ export const defaultRestaurantConfig = {
     urgency: "Solo los jueves de 19:00 a 23:00",
   },
 }
+
+export const settings = {
+  deliveryFee: 500,
+}

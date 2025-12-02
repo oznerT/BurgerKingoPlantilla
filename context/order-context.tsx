@@ -56,6 +56,8 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         if (cart.length > 0) {
             localStorage.setItem("burger-cart", JSON.stringify(cart))
+        } else {
+            localStorage.removeItem("burger-cart")
         }
     }, [cart])
 

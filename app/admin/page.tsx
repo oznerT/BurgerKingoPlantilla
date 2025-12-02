@@ -15,6 +15,7 @@ export default function AdminLogin() {
 
     const handleLogin = (e: React.FormEvent) => {
         e.preventDefault()
+        // DEMO ONLY – Reemplazar por auth real en producción.
         if (username === "admin" && password === "123") {
             // Set a simple cookie or local storage flag for demo purposes
             localStorage.setItem("admin-auth", "true")
