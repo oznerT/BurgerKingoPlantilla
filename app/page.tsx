@@ -1,150 +1,20 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
+import { useSearchParams } from "next/navigation"
 import { Menu, X, ShoppingCart, Phone, MapPin, Clock, Star, ChevronRight, Plus, Minus, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { PaymentMethodModal } from "@/components/PaymentMethodModal"
+import { OrderDataModal } from "@/components/OrderDataModal"
+import { SuccessView } from "@/components/SuccessView"
+import { Toaster } from "sonner"
 
 // ========================================
 // CONFIGURATION OBJECT - EDIT THIS TO REUSE THE TEMPLATE
 // ========================================
-const restaurantConfig = {
-  name: "BURGER KINGO",
-  slogan: "La Verdadera Bestia",
-  tagline: "Carne 100% roast beef, pan de papa y nuestra salsa secreta",
-  phone: "+5492610000000", // WhatsApp number
-  address: "Av. San Martín 1234, Centro, Mendoza",
-  location: "Estamos en pleno centro de Mendoza",
-  hours: {
-    weekdays: "Lunes a Viernes: 12:00 - 15:00 | 19:00 - 00:00",
-    weekends: "Sábados y Domingos: 12:00 - 01:00",
-  },
-  deliveryOptions: ["Retiro en local", "Delivery a domicilio", "Pedí por WhatsApp"],
-  socialMedia: {
-    instagram: "@burgerkingo",
-    facebook: "BurgerKingoOficial",
-  },
-  promos: [
-    {
-      id: "promo-1",
-      title: "3x2 en Burgers",
-      description: "Tres Bestias Originales por el precio de dos. ¡Ideal para compartir!",
-      price: 9000,
-      urgency: "Solo por tiempo limitado",
-    },
-    {
-      id: "promo-2",
-      title: "Pack Finde",
-      description: "2 Kingo BBQ + 1 Papas Cheddar Gigantes + 2 Pintas de Cerveza",
-      price: 12500,
-      urgency: "Viernes y Sábados",
-    },
-    {
-      id: "promo-3",
-      title: "Family Box",
-      description: "4 Hamburguesas a elección + 2 Papas Grandes + 1 Gaseosa 1.5L",
-      price: 18000,
-      urgency: "Todos los días",
-    },
-  ],
-  menuItems: [
-    {
-      id: 1,
-      name: "La Bestia Original",
-      description: "Doble carne de roast beef, queso cheddar, bacon, cebolla caramelizada",
-      price: 4500,
-      category: "Hamburguesas",
-      image: "/gourmet-double-burger-with-cheese-and-bacon-dark-b.jpg",
-    },
-    {
-      id: 2,
-      name: "Kingo BBQ",
-      description: "Carne de roast beef, queso ahumado, salsa BBQ casera, aros de cebolla",
-      price: 4200,
-      category: "Hamburguesas",
-      image: "/bbq-burger-with-onion-rings-dark-background.jpg",
-    },
-    {
-      id: 3,
-      name: "Crispy Chicken",
-      description: "Suprema crocante, lechuga, tomate, salsa especial de la casa",
-      price: 3800,
-      category: "Hamburguesas",
-      image: "/crispy-chicken-burger-dark-background.jpg",
-    },
-    {
-      id: 4,
-      name: "Veggie Deluxe",
-      description: "Medallón de quinoa y vegetales, queso, palta, rúcula",
-      price: 3500,
-      category: "Hamburguesas",
-      image: "/vegetarian-burger-with-avocado-dark-background.jpg",
-    },
-    {
-      id: 5,
-      name: "Papas Clásicas",
-      description: "Papas fritas caseras con sal marina",
-      price: 1500,
-      category: "Papas",
-      image: "/golden-french-fries-dark-background.jpg",
-    },
-    {
-      id: 6,
-      name: "Papas Cheddar Bacon",
-      description: "Papas con queso cheddar fundido, bacon crocante y cebollita de verdeo",
-      price: 2200,
-      category: "Papas",
-      image: "/loaded-cheese-fries-with-bacon-dark-background.jpg",
-    },
-    {
-      id: 7,
-      name: "Coca Cola",
-      description: "Lata 354ml",
-      price: 800,
-      category: "Bebidas",
-      image: "/soda-can-dark-background.jpg",
-    },
-    {
-      id: 8,
-      name: "Cerveza Artesanal",
-      description: "Pinta 500ml - IPA o Rubia",
-      price: 1800,
-      category: "Bebidas",
-      image: "/craft-beer-glass-dark-background.jpg",
-    },
-  ],
-  testimonials: [
-    {
-      id: 1,
-      name: "Martín G.",
-      rating: 5,
-      comment: "Las mejores hamburguesas de Mendoza, sin dudas. La carne es de otro nivel.",
-    },
-    {
-      id: 2,
-      name: "Carolina R.",
-      rating: 5,
-      comment: "Me encanta la Bestia Original, siempre que puedo voy. El pan de papa es espectacular.",
-    },
-    {
-      id: 3,
-      name: "Rodrigo M.",
-      rating: 5,
-      comment: "Excelente atención y las papas cheddar bacon son adictivas. 100% recomendable.",
-    },
-    {
-      id: 4,
-      name: "Lucía F.",
-      rating: 5,
-      comment: "La mejor relación calidad-precio. Siempre llegan perfectas por delivery.",
-    },
-  ],
-  promo: {
-    title: "Promo Jueves 2x1",
-    description: "Todos los jueves 2x1 en burgers seleccionadas",
-    urgency: "Solo los jueves de 19:00 a 23:00",
-  },
-}
+import { useConfig } from "@/context/config-context"
+import { useOrder } from "@/context/order-context"
 
 // ========================================
 // HELPER FUNCTIONS
@@ -174,11 +44,13 @@ function Header({
   cartTotal: number
   onOpenCart: () => void
 }) {
+  const { config: restaurantConfig } = useConfig()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   const navLinks = [
     { label: "Inicio", href: "#hero" },
     { label: "Menú", href: "#menu" },
+    { label: "Ubicación", href: "#ubicacion" },
     { label: "Promos", href: "#promos" },
     { label: "Opiniones", href: "#testimonios" },
   ]
@@ -285,6 +157,7 @@ function Header({
 }
 
 function Hero() {
+  const { config: restaurantConfig } = useConfig()
   return (
     <section id="hero" className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
       {/* Background Image with Overlay */}
@@ -361,6 +234,7 @@ function HowItWorks() {
 }
 
 function MenuSection({ onAddToCart }: { onAddToCart: (item: any) => void }) {
+  const { config: restaurantConfig } = useConfig()
   const [selectedCategory, setSelectedCategory] = useState("Hamburguesas")
   const categories = Array.from(new Set(restaurantConfig.menuItems.map((item) => item.category)))
   const filteredItems = restaurantConfig.menuItems.filter((item) => item.category === selectedCategory)
@@ -378,11 +252,10 @@ function MenuSection({ onAddToCart }: { onAddToCart: (item: any) => void }) {
             <button
               key={category}
               onClick={() => setSelectedCategory(category)}
-              className={`px-6 py-2 rounded-full font-semibold whitespace-nowrap transition-all ${
-                selectedCategory === category
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-              }`}
+              className={`px-6 py-2 rounded-full font-semibold whitespace-nowrap transition-all ${selectedCategory === category
+                ? "bg-primary text-primary-foreground"
+                : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                }`}
             >
               {category}
             </button>
@@ -426,6 +299,7 @@ function MenuSection({ onAddToCart }: { onAddToCart: (item: any) => void }) {
 }
 
 function PromoSection({ onAddToCart }: { onAddToCart: (item: any) => void }) {
+  const { config: restaurantConfig } = useConfig()
   return (
     <section
       id="promos"
@@ -473,6 +347,7 @@ function PromoSection({ onAddToCart }: { onAddToCart: (item: any) => void }) {
 }
 
 function Testimonials() {
+  const { config: restaurantConfig } = useConfig()
   return (
     <section id="testimonios" className="py-16 md:py-24 bg-secondary/20">
       <div className="container mx-auto px-4">
@@ -497,29 +372,76 @@ function Testimonials() {
   )
 }
 
-function LocationAndHours() {
+function LocationSection() {
+  const { config: restaurantConfig } = useConfig()
+
+  // Use mapUrl if provided, otherwise fallback to address
+  // This allows the user to specify a more precise location for the map
+  const mapQuery = restaurantConfig.mapUrl || restaurantConfig.address
+  const encodedQuery = encodeURIComponent(mapQuery)
+
+  const mapUrl = `https://maps.google.com/maps?q=${encodedQuery}&t=&z=15&ie=UTF8&iwloc=&output=embed`
+  const externalMapUrl = `https://www.google.com/maps/search/?api=1&query=${encodedQuery}`
+
   return (
-    <section className="py-16 md:py-24">
+    <section id="ubicacion" className="py-16 md:py-24 bg-secondary/10">
       <div className="container mx-auto px-4">
-        <div className="grid md:grid-cols-2 gap-12 max-w-5xl mx-auto">
-          {/* Hours */}
-          <div className="text-center md:text-left">
-            <div className="inline-flex items-center gap-2 mb-4">
-              <Clock className="w-6 h-6 text-primary" />
-              <h3 className="font-heading text-2xl font-bold text-foreground">HORARIOS</h3>
+        <h2 className="font-heading text-4xl md:text-5xl font-bold text-center text-foreground mb-12 tracking-tight">
+          DÓNDE ESTAMOS
+        </h2>
+
+        <div className="grid md:grid-cols-2 gap-8 items-center max-w-6xl mx-auto">
+          {/* Info Side */}
+          <div className="space-y-8 order-2 md:order-1">
+            <div className="bg-card p-8 rounded-2xl shadow-lg border border-border">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="bg-primary/10 p-3 rounded-full">
+                  <MapPin className="w-8 h-8 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-heading text-2xl font-bold mb-2">Ubicación</h3>
+                  <p className="text-lg text-muted-foreground mb-2">{restaurantConfig.address}</p>
+                  <p className="text-sm text-muted-foreground">{restaurantConfig.location}</p>
+                  <Button
+                    variant="link"
+                    className="px-0 text-primary mt-2 h-auto font-semibold"
+                    onClick={() => window.open(externalMapUrl, '_blank')}
+                  >
+                    Ver en Google Maps <ChevronRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-4">
+                <div className="bg-primary/10 p-3 rounded-full">
+                  <Clock className="w-8 h-8 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-heading text-2xl font-bold mb-2">Horarios</h3>
+                  <p className="text-muted-foreground mb-1">{restaurantConfig.hours.weekdays}</p>
+                  <p className="text-muted-foreground">{restaurantConfig.hours.weekends}</p>
+                </div>
+              </div>
             </div>
-            <p className="text-muted-foreground leading-relaxed mb-2">{restaurantConfig.hours.weekdays}</p>
-            <p className="text-muted-foreground leading-relaxed">{restaurantConfig.hours.weekends}</p>
           </div>
 
-          {/* Location */}
-          <div className="text-center md:text-left">
-            <div className="inline-flex items-center gap-2 mb-4">
-              <MapPin className="w-6 h-6 text-primary" />
-              <h3 className="font-heading text-2xl font-bold text-foreground">UBICACIÓN</h3>
-            </div>
-            <p className="text-muted-foreground leading-relaxed mb-2">{restaurantConfig.address}</p>
-            <p className="text-sm text-muted-foreground">{restaurantConfig.location}</p>
+          {/* Map Side */}
+          <div className="h-[400px] w-full rounded-2xl overflow-hidden shadow-xl border border-border order-1 md:order-2 relative group">
+            <iframe
+              width="100%"
+              height="100%"
+              src={mapUrl}
+              style={{ border: 0 }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+              className="grayscale hover:grayscale-0 transition-all duration-500"
+            />
+            <div
+              className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors cursor-pointer"
+              onClick={() => window.open(externalMapUrl, '_blank')}
+              title="Abrir en Google Maps"
+            />
           </div>
         </div>
       </div>
@@ -528,6 +450,7 @@ function LocationAndHours() {
 }
 
 function Footer() {
+  const { config: restaurantConfig } = useConfig()
   return (
     <footer className="bg-secondary/50 py-12 border-t border-border">
       <div className="container mx-auto px-4">
@@ -587,9 +510,12 @@ function MobileCartBar({
   if (cartCount === 0) return null
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.3)] z-50 animate-in slide-in-from-bottom-full duration-300">
+    <div
+      onClick={onOpenCart}
+      className="fixed bottom-0 left-0 right-0 bg-card border-t border-border p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.3)] z-50 animate-in slide-in-from-bottom-full duration-300 cursor-pointer hover:bg-accent/5 transition-colors"
+    >
       <div className="container mx-auto flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3 cursor-pointer" onClick={onOpenCart}>
+        <div className="flex items-center gap-3">
           <div className="relative">
             <ShoppingCart className="w-6 h-6 text-primary" />
             <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 bg-accent text-accent-foreground">
@@ -601,14 +527,10 @@ function MobileCartBar({
             <span className="text-xl font-bold text-foreground font-heading">${cartTotal.toLocaleString()}</span>
           </div>
         </div>
-        <Button
-          onClick={onCheckout}
-          size="lg"
-          className="bg-green-600 hover:bg-green-700 text-white font-bold shadow-lg flex-1 max-w-md"
-        >
-          Finalizar Pedido
-          <ChevronRight className="w-5 h-5 ml-1" />
-        </Button>
+        <div className="flex items-center gap-2 text-primary font-bold">
+          Ver Pedido
+          <ChevronRight className="w-5 h-5" />
+        </div>
       </div>
     </div>
   )
@@ -736,7 +658,7 @@ function CartModal({
               onClick={onCheckout}
               className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-6 text-lg shadow-lg"
             >
-              Finalizar Pedido por WhatsApp
+              Continuar
               <ChevronRight className="w-5 h-5 ml-2" />
             </Button>
           </div>
@@ -749,92 +671,58 @@ function CartModal({
 // ========================================
 // MAIN PAGE COMPONENT
 // ========================================
-export default function BurgerLandingPage() {
-  const [cart, setCart] = useState<CartItem[]>([])
+function BurgerLandingPageContent() {
+  const searchParams = useSearchParams()
+  const { config: restaurantConfig } = useConfig()
+  const { cart, addToCart, updateCartQuantity, removeFromCart, cartTotal, cartCount } = useOrder()
   const [isCartOpen, setIsCartOpen] = useState(false)
+  const [isOrderDataModalOpen, setIsOrderDataModalOpen] = useState(false)
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
 
-  useEffect(() => {
-    const savedCart = localStorage.getItem("burger-cart")
-    if (savedCart) {
-      try {
-        setCart(JSON.parse(savedCart))
-      } catch (e) {
-        console.error("Error loading cart", e)
-      }
-    }
-  }, [])
+  // Detectar si venimos de Mercado Pago
+  const result = searchParams.get("result")
 
-  useEffect(() => {
-    localStorage.setItem("burger-cart", JSON.stringify(cart))
-  }, [cart])
+  // Si hay result=success, mostrar SuccessView
+  if (result === "success") {
+    return <SuccessView />
+  }
 
-  const addToCart = (product: any) => {
-    setCart((prevCart) => {
-      const existingItem = prevCart.find((item) => item.id === product.id)
-      if (existingItem) {
-        return prevCart.map((item) => (item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item))
-      } else {
-        setIsCartOpen(true) // Open cart when adding new item for better UX
-        return [
-          ...prevCart,
-          {
-            id: product.id,
-            name: product.name || product.title,
-            price: product.price,
-            quantity: 1,
-            image: product.image, // Save image for cart display
-          },
-        ]
-      }
+  const handleAddToCart = (product: any) => {
+    addToCart({
+      id: product.id,
+      name: product.name || product.title,
+      price: product.price,
+      image: product.image,
     })
+    setIsCartOpen(true)
   }
-
-  const updateCartItemQuantity = (id: string | number, delta: number) => {
-    setCart((prevCart) => {
-      return prevCart.map((item) => {
-        if (item.id === id) {
-          const newQuantity = Math.max(1, item.quantity + delta)
-          return { ...item, quantity: newQuantity }
-        }
-        return item
-      })
-    })
-  }
-
-  const removeFromCart = (id: string | number) => {
-    setCart((prevCart) => prevCart.filter((item) => item.id !== id))
-  }
-
-  const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0)
-  const cartTotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0)
 
   const handleCheckout = () => {
     if (cart.length === 0) return
-
-    let message = "¡Hola! Quiero realizar el siguiente pedido:\n\n"
-
-    cart.forEach((item) => {
-      message += `▪️ ${item.quantity}x ${item.name} - $${(item.price * item.quantity).toLocaleString()}\n`
-    })
-
-    message += `\n💰 *TOTAL: $${cartTotal.toLocaleString()}*\n`
-    message += "\n¿Cómo seguimos para el envío/retiro?"
-
-    window.open(buildWhatsAppURL(restaurantConfig.phone, message), "_blank")
-    setCart([]) // Clear cart after checkout
     setIsCartOpen(false)
+    setIsOrderDataModalOpen(true)
+  }
+
+  const handleOrderDataContinue = () => {
+    setIsOrderDataModalOpen(false)
+    setIsPaymentModalOpen(true)
   }
 
   return (
-    <main className="min-h-screen pb-24 md:pb-0">
+    <div className="min-h-screen bg-background text-foreground font-sans selection:bg-primary selection:text-primary-foreground">
       <Header cartCount={cartCount} cartTotal={cartTotal} onOpenCart={() => setIsCartOpen(true)} />
-      <Hero />
-      <HowItWorks />
-      <MenuSection onAddToCart={addToCart} />
-      <PromoSection onAddToCart={addToCart} />
-      <Testimonials />
-      <LocationAndHours />
+
+      <main>
+        <Hero />
+        <HowItWorks />
+        <MenuSection onAddToCart={handleAddToCart} />
+        <PromoSection onAddToCart={handleAddToCart} />
+        <LocationSection />
+        <Testimonials />
+      </main>
+
       <Footer />
+
       <MobileCartBar
         cartCount={cartCount}
         cartTotal={cartTotal}
@@ -847,10 +735,31 @@ export default function BurgerLandingPage() {
         onClose={() => setIsCartOpen(false)}
         cart={cart}
         total={cartTotal}
-        onUpdateQuantity={updateCartItemQuantity}
+        onUpdateQuantity={updateCartQuantity}
         onRemoveItem={removeFromCart}
         onCheckout={handleCheckout}
       />
-    </main>
+
+      <OrderDataModal
+        isOpen={isOrderDataModalOpen}
+        onClose={() => setIsOrderDataModalOpen(false)}
+        onContinue={handleOrderDataContinue}
+      />
+
+      <PaymentMethodModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+      />
+
+      <Toaster position="top-center" richColors />
+    </div>
+  )
+}
+
+export default function BurgerLandingPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
+      <BurgerLandingPageContent />
+    </Suspense>
   )
 }

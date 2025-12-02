@@ -33,6 +33,9 @@ export const metadata: Metadata = {
   },
 }
 
+import { ConfigProvider } from "@/context/config-context"
+import { OrderProvider } from "@/context/order-context"
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -41,7 +44,9 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`font-sans antialiased`}>
-        {children}
+        <ConfigProvider>
+          <OrderProvider>{children}</OrderProvider>
+        </ConfigProvider>
         <Analytics />
       </body>
     </html>
